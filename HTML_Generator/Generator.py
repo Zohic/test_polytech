@@ -49,13 +49,13 @@ def GetTag(num):
     if num==1:
         return Div([])
     elif num==2:
-        return tagA("")
+        return A("")
     elif num==3:
         return Img("")
     elif num==4:
         return Br()
     elif num==5:
-        return tagP("")
+        return P("")
     elif num==6:
         return Title("")
     elif num==7:
@@ -134,7 +134,7 @@ def LoadFromFile(fileName):
             if sym=='\n':
                 wasEnd = True
             if sym=="<" and gotTag==False:
-                tagStr = ""
+                tagName = ""
                 while not (sym=='>' or sym==' '):
                     sym = file.read(1)
                     if sym=='/':
@@ -143,16 +143,16 @@ def LoadFromFile(fileName):
                                 #lastParent = lastParent.parent
                         break
                     if not (sym=='>' or sym==' '):
-                        tagStr+=sym
+                        tagName+=sym
                 if not sym=='/':
                     for i in range(1,tagsAvaible+1):
                         tt = GetTag(i)
-                        #print(tt.tagStr)
-                        if tagStr==tt.tagStr:
+                        #print(tt.tagName)
+                        if tagName==tt.tagName:
                             print("GOT")
                             curTag = tt
                             gotTag = True
-                            print(curTag.tagStr)
+                            print(curTag.tagName)
             if gotTag:
                 atr=""
                 while not sym=='>':
@@ -168,7 +168,7 @@ def LoadFromFile(fileName):
                     sym=file.read(1)
                     txt+=sym
                 gotTxt=True
-                #curTag.innerHTML = txt
+                #curTag.text = txt
                 print("gotEnd")
                 if sym=='<':
                     print("AAA")
@@ -181,7 +181,7 @@ def LoadFromFile(fileName):
                             if not lastParent==None:
                                 print("PARENT IS NIT GONE")
                                 curTag.parent = lastParent
-                                curTag.parent.container.append(curTag)
+                                curTag.parent.inside.append(curTag)
                                 #if not lastParent.parent==None:
                                 #    lastParent = lastParent.parent
                             else:
@@ -205,7 +205,7 @@ def LoadFromFile(fileName):
                         print("parent UP")
                         curTag.parent = lastParent
                         if not lastParent==None:
-                            lastParent.container.append(curTag)
+                            lastParent.inside.append(curTag)
                         
                         gotTag=False
                         gotAtr=False
@@ -234,12 +234,12 @@ def NumerateString(tstr):
     
 
 def HowMuchLines(tag):
-    if len(tag.container)==0:
+    if len(tag.inside)==0:
         lines = 1
     else:
         lines = 2
-    for i in range(len(tag.container)):
-        lines+=HowMuchLines(tag.container[i])
+    for i in range(len(tag.inside)):
+        lines+=HowMuchLines(tag.inside[i])
     return lines
 
 
@@ -259,16 +259,16 @@ def GenerateFromTag(itag,linesList,theLine):
 
         tab = "\t"*tabs
 
-        ostr = tab+"<"+itag.tagStr+" "+itag.attributes+">"+itag.innerHTML
+        ostr = tab+"<"+itag.tagName+" "+itag.attributes+">"+itag.text
 
         linesList[curLine]=itag
 
-        if len(itag.container)>0:
+        if len(itag.inside)>0:
             ostr=ostr+"\n"
             linesList[curLine+HowMuchLines(itag)-1]=itag
 
         passedLines = 1
-        for tag in itag.container:
+        for tag in itag.inside:
             ostr = ostr+GenerateFromTag(tag,linesList, curLine+passedLines)
             passedLines+=HowMuchLines(tag)
    
@@ -276,10 +276,10 @@ def GenerateFromTag(itag,linesList,theLine):
         if itag.single:
             ostr = ostr+"\n"
         else:
-            if len(itag.container)>0:
-                ostr = ostr+tab+"</"+itag.tagStr+"> \n"
+            if len(itag.inside)>0:
+                ostr = ostr+tab+"</"+itag.tagName+"> \n"
             else:
-                ostr = ostr+"</"+itag.tagStr+"> \n"
+                ostr = ostr+"</"+itag.tagName+"> \n"
 
         return ostr
 
@@ -290,14 +290,14 @@ def PutNewTag(tag, par, pos,above):
         ErrorPage("!!!Cannot put tag here!!!")
         return False
     if above:
-        for i in range(pos, len(par.container)):
-            par.container[i].localPos+=1
+        for i in range(pos, len(par.inside)):
+            par.inside[i].localPos+=1
     else:
-        for i in range(pos+1, len(par.container)):
-            par.container[i].localPos+=1
+        for i in range(pos+1, len(par.inside)):
+            par.inside[i].localPos+=1
     tag.localPos = pos
     tag.parent=par
-    par.container = par.container[:pos]+[tag]+par.container[pos:]
+    par.inside = par.inside[:pos]+[tag]+par.inside[pos:]
     return True
 
 def RemoveTag(itag, keep):
@@ -306,25 +306,25 @@ def RemoveTag(itag, keep):
         ErrorPage("!!!Cannot remove the tag!!!")
         return False
 
-    if len(itag.container)>0:
+    if len(itag.inside)>0:
         if keep:
-            le = len(itag.container)
+            le = len(itag.inside)
             for i in range(le):
-                PutNewTag(itag.container[i], itag.parent, itag.localPos+i ,True)
+                PutNewTag(itag.inside[i], itag.parent, itag.localPos+i ,True)
             p = itag.localPos
-            itag.parent.container.pop(p)
-            for i in range(p, len(itag.parent.container)):
-                itag.parent.container[i].localPos-=1
+            itag.parent.inside.pop(p)
+            for i in range(p, len(itag.parent.inside)):
+                itag.parent.inside[i].localPos-=1
         else:
             p = itag.localPos
-            itag.parent.container.pop(p)
-            for i in range(p+1, len(itag.parent.container)):
-                itag.parent.container[i].localPos-=1
+            itag.parent.inside.pop(p)
+            for i in range(p+1, len(itag.parent.inside)):
+                itag.parent.inside[i].localPos-=1
     else:
         p = itag.localPos
-        itag.parent.container.pop(p)
-        for i in range(p+1, len(itag.parent.container)):
-            itag.parent.container[i].localPos-=1
+        itag.parent.inside.pop(p)
+        for i in range(p+1, len(itag.parent.inside)):
+            itag.parent.inside[i].localPos-=1
 
 
 def ShowPage():
@@ -450,7 +450,7 @@ def PlacingTag(par=None):
             return
 
         if choice==3:
-            if not isinstance(globalTags[putLine], ContainerTag):
+            if not isinstance(globalTags[putLine], InsideTag):
                 ErrorPage("CANT DO THAT")
 
         up=True
@@ -511,7 +511,7 @@ def TemplatePlace():
     if choice==1:
         a = input("text of the link: ")
         b = input("url of the link: ")
-        newTags.append(tagA(a,b))
+        newTags.append(A(a,b))
     elif choice==2:
         a = input("image source: ")
         b = input("width of image in px or %: ")
@@ -629,9 +629,9 @@ def ChangingText():
         text = textE
 
     if chad==1: 
-        theTag.innerHTML = text
+        theTag.text = text
     if chad==2:
-        theTag.innerHTML += text
+        theTag.text += text
     Redactor()
 
 
@@ -649,7 +649,7 @@ def RemovingTag():
     rLine = choice-1
     theTag = globalTags[rLine]
 
-    if len(theTag.container)>0:
+    if len(theTag.inside)>0:
         cls()
         ShowPage()
         print(indent)
@@ -703,7 +703,7 @@ def Redactor():
             return
 
         if choice==1:
-            if len(thePage.container)>0:
+            if len(thePage.inside)>0:
                 PlacingTag()
             else:
                 PlacingTag(thePage)
