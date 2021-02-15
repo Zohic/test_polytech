@@ -6,6 +6,20 @@ float absolute_value(float x)
    return *((float*)&b);   
 }
 
+float absolute_value2(float x)
+{
+   if(x>=0)
+      return x;
+   else
+      return -x;
+}
+
+float absolute_value3(float x)
+{
+   return x?x>=0:-x;
+}
+
+
 int main()
 {
   std::cout << absolute_value(-2.717f) << std::endl;
